@@ -1,0 +1,275 @@
+/* matterkeep — dark default, light via prefers-color-scheme or data-theme="light" */
+
+:root {
+  --bg: #1a1d21;
+  --bg-sidebar: #19171d;
+  --bg-message-hover: #222529;
+  --bg-thread: #1e2024;
+  --text: #d1d2d3;
+  --text-muted: #8a8c90;
+  --text-username: #e8e8e9;
+  --accent: #7c5cbf;
+  --accent-light: #9d81cc;
+  --border: #2d2f33;
+  --link: #7ab0d4;
+  --badge-bg: #3a3d42;
+  --badge-text: #8a8c90;
+  --search-bg: #2a2d31;
+  --search-border: #3d4045;
+  --reaction-bg: #2d2f33;
+  --system-text: #6b6e73;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", Consolas, monospace;
+}
+
+[data-theme="light"],
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff;
+    --bg-sidebar: #f5f5f5;
+    --bg-message-hover: #f9f9f9;
+    --bg-thread: #f5f5f5;
+    --text: #1a1d21;
+    --text-muted: #606060;
+    --text-username: #1a1d21;
+    --accent: #5b3fa0;
+    --accent-light: #7c5cbf;
+    --border: #e0e0e0;
+    --link: #1a73b5;
+    --badge-bg: #e8e8e8;
+    --badge-text: #606060;
+    --search-bg: #f0f0f0;
+    --search-border: #d0d0d0;
+    --reaction-bg: #f0f0f0;
+    --system-text: #909090;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  min-width: 200px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-username);
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.search-box:focus { border-color: var(--accent); }
+
+.search-results {
+  padding: 8px 0;
+  overflow-y: auto;
+  max-height: 300px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-results.hidden { display: none; }
+
+.search-result-item {
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.search-result-item:hover { background: var(--bg-message-hover); }
+.search-result-channel { color: var(--text-muted); font-size: 11px; }
+
+#channel-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+
+.channel-group { margin-bottom: 12px; }
+
+.channel-group-label {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.channel-link {
+  display: block;
+  padding: 4px 14px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+  margin: 1px 6px;
+}
+
+.channel-link:hover { background: var(--bg-message-hover); }
+.channel-link.channel-left { opacity: 0.5; font-style: italic; }
+
+.badge-left {
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Main panel */
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.channel-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.channel-header h2 { font-size: 18px; font-weight: 700; }
+.channel-purpose { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+.welcome {
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.welcome h1 { margin-bottom: 8px; }
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.message {
+  padding: 4px 20px;
+  border-radius: 4px;
+}
+
+.message:hover { background: var(--bg-message-hover); }
+
+.message-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.username { font-weight: 700; color: var(--text-username); font-size: 14px; }
+.timestamp { color: var(--text-muted); font-size: 11px; }
+
+.message-body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.message-body p { margin-bottom: 4px; }
+.message-body code { font-family: var(--font-mono); background: var(--bg-thread); padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+.message-body pre { background: var(--bg-thread); padding: 10px 14px; border-radius: 6px; overflow-x: auto; margin: 6px 0; }
+.message-body pre code { background: none; padding: 0; }
+.message-body a { color: var(--link); }
+.message-body blockquote { border-left: 3px solid var(--border); padding-left: 10px; color: var(--text-muted); margin: 4px 0; }
+
+.system-message { padding: 2px 20px; }
+.system-text { color: var(--system-text); font-size: 12px; font-style: italic; }
+
+.attachments { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+
+.attachment-image img {
+  max-width: 400px;
+  max-height: 300px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.attachment-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--link);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.attachment-file:hover { text-decoration: underline; }
+.attachment-unavailable { color: var(--text-muted); font-size: 13px; }
+.file-size { color: var(--text-muted); }
+
+.reactions {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.reaction {
+  background: var(--reaction-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.thread {
+  margin-top: 4px;
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+  background: var(--bg-thread);
+  border-radius: 0 4px 4px 0;
+}
+
+.reply { padding: 4px 10px; }

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set assets_prefix = "../assets/" %}
+
+{% block title %}#{{ channel.display_name }} — matterkeep{% endblock %}
+
+{% block body %}
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="logo" href="../index.html">matterkeep</a>
+    </div>
+  </nav>
+
+  <main class="main-panel">
+    <div class="channel-header">
+      <h2>
+        {% if channel.type == "D" %}@{% else %}#{% endif %}{{ channel.display_name }}
+        {% if channel.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+      </h2>
+      {% if channel.purpose %}<p class="channel-purpose">{{ channel.purpose }}</p>{% endif %}
+    </div>
+
+    <div class="messages">
+      {% for item in posts %}
+        {% set post = item.post %}
+        <div class="message {% if post.type %}system-message{% endif %}" id="post-{{ post.id }}">
+          {% if post.type %}
+            <div class="system-text">{{ post.message }}</div>
+          {% else %}
+            <div class="message-meta">
+              <span class="username">{{ item.user.display_name or item.user.username }}</span>
+              <span class="timestamp">{{ item.timestamp }}</span>
+            </div>
+            <div class="message-body">{{ item.body_html | safe }}</div>
+
+            {% if post.files %}
+            <div class="attachments">
+              {% for f in post.files %}
+                {% if inline_images and f.mime_type and f.mime_type.startswith("image/") and f.local_path %}
+                  <div class="attachment-image">
+                    <img src="../{{ f.local_path }}" alt="{{ f.name }}" loading="lazy">
+                  </div>
+                {% elif f.local_path %}
+                  <a class="attachment-file" href="../{{ f.local_path }}" download="{{ f.name }}">
+                    📎 {{ f.name }}
+                    {% if f.size %}<span class="file-size">({{ (f.size / 1024) | round(1) }} KB)</span>{% endif %}
+                  </a>
+                {% else %}
+                  <span class="attachment-unavailable">📎 {{ f.name }} <em>(not downloaded)</em></span>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if post.reactions %}
+            <div class="reactions">
+              {% set reaction_counts = {} %}
+              {% for r in post.reactions %}
+                {% if r.emoji_name not in reaction_counts %}
+                  {% set _ = reaction_counts.update({r.emoji_name: 0}) %}
+                {% endif %}
+                {% set _ = reaction_counts.update({r.emoji_name: reaction_counts[r.emoji_name] + 1}) %}
+              {% endfor %}
+              {% for emoji, count in reaction_counts.items() %}
+                <span class="reaction">:{{ emoji }}: {{ count }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if item.replies %}
+            <div class="thread">
+              {% for reply in item.replies %}
+              <div class="reply" id="post-{{ reply.post.id }}">
+                <div class="message-meta">
+                  <span class="username">{{ reply.user.display_name or reply.user.username }}</span>
+                  <span class="timestamp">{{ reply.timestamp }}</span>
+                </div>
+                <div class="message-body">{{ reply.body_html | safe }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </main>
+</div>
+{% endblock %}

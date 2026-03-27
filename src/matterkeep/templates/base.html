@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}matterkeep{% endblock %}</title>
+  <link rel="stylesheet" href="{{ assets_prefix }}style.css">
+</head>
+<body>
+{% block body %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script>
+<script src="{{ assets_prefix }}search.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

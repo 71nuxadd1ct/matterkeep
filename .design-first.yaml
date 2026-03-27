@@ -1,0 +1,31 @@
+project: "matterkeep"
+description: "CLI tool to archive a Mattermost user's message history and media into a self-contained offline HTML archive"
+depth: standard
+modules:
+  ui:
+    enabled: true
+    framework: jinja2
+    wireframe_format: mermaid
+  api:
+    enabled: true
+    style: REST
+  data:
+    enabled: true
+    store: flat-file  # JSON + sync_state.json, no database
+  security:
+    enabled: true
+    auth: credentials  # username+password prompt → session token (MVP); PAT future option
+  infra:
+    enabled: false    # minimal: plain Python script, no Docker for MVP
+versioning:
+  enabled: true
+  scheme: semver
+  version_file: "pyproject.toml"
+  changelog: true
+  changelog_file: CHANGELOG.md
+  initial_version: "0.1.0"
+
+overrides:
+  allow_skip: true
+  auto_skip_hotfix: true
+  minimum_module: null

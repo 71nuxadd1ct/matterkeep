@@ -1,0 +1,118 @@
+# matterkeep — Mattermost API consumption spec
+# This documents the Mattermost REST API v4 endpoints consumed by matterkeep.
+# matterkeep does not expose an API; this is a consumer contract.
+
+info:
+  title: Mattermost API v4 — matterkeep consumption surface
+  description: >
+    Endpoints used by matterkeep. All requests are user-scoped (no admin
+    endpoints). Auth via session token (Bearer) obtained from /users/login,
+    or via PAT (future).
+  version: "0.1.0"
+
+auth:
+  type: bearer
+  token_source:
+    mvp: "POST /api/v4/users/login response header: Token"
+    future: "MM_TOKEN env var or system keyring"
+
+rate_limits:
+  headers:
+    - X-Ratelimit-Limit
+    - X-Ratelimit-Remaining
+    - X-Ratelimit-Reset
+  strategy: >
+    Sleep when X-Ratelimit-Remaining <= 5. Retry 429 with exponential
+    backoff (base 1s, max 60s, 5 retries). Configurable default delay
+    for proxies that strip rate-limit headers.
+
+endpoints:
+  - path: /api/v4/users/login
+    method: POST
+    purpose: Authenticate with username + password, receive session token
+    body: '{ "login_id": "...", "password": "..." }'
+    response_header: Token
+
+  - path: /api/v4/users/me
+    method: GET
+    purpose: Verify auth, get own user ID and profile
+
+  - path: /api/v4/users/{user_id}
+    method: GET
+    purpose: Resolve user profile for post authors (handle 404 gracefully)
+
+  - path: /api/v4/users/{user_id}/image
+    method: GET
+    purpose: Download user avatar (optional)
+
+  - path: /api/v4/users/me/teams
+    method: GET
+    purpose: List teams the user belongs to
+
+  - path: /api/v4/users/me/channels
+    method: GET
+    params:
+      team_id: required per call
+    purpose: List all channels the user is a member of (public, private, DM, GM)
+    notes: >
+      "Closed" DMs are still returned here (closing hides from sidebar but
+      does not remove membership).
+
+  - path: /api/v4/teams/{team_id}/channels
+    method: GET
+    purpose: >
+      List ALL public channels on a team (used only with --include-left to
+      discover public channels the user has left). Requires view_team permission.
+    params:
+      page: 0-indexed
+      per_page: max 200
+
+  - path: /api/v4/channels/{channel_id}
+    method: GET
+    purpose: Channel metadata
+
+  - path: /api/v4/channels/{channel_id}/posts
+    method: GET
+    params:
+      page: 0-indexed
+      per_page: max 200 (use 200)
+      since: unix millisecond timestamp (incremental sync)
+    response_shape: >
+      { "posts": { post_id: Post }, "order": [post_id, ...] }
+      Use "order" array for display order, not dict key order.
+    notes: >
+      "since" returns posts created OR updated after that timestamp.
+      Exporter must merge edited posts by id, not blindly append.
+
+  - path: /api/v4/files/{file_id}
+    method: GET
+    purpose: Download file content (stream to disk)
+    error_handling: >
+      403 on --include-left channels: log warning, skip file, continue.
+
+  - path: /api/v4/files/{file_id}/info
+    method: GET
+    purpose: File metadata (name, size, mime_type)
+
+  - path: /api/v4/emoji
+    method: GET
+    purpose: Custom emoji list for rendering
+    params:
+      page: 0-indexed
+      per_page: max 200
+
+  - path: /api/v4/emoji/{emoji_id}/image
+    method: GET
+    purpose: Custom emoji image download
+    error_handling: Fall back to emoji name as text if unavailable
+
+pagination:
+  style: page + per_page (0-indexed)
+  max_per_page: 200
+  termination: empty "order" array or posts count < per_page
+
+error_handling:
+  404: Deleted user — use raw user_id as display name fallback
+  403: Insufficient permission — log warning, skip resource, continue
+  429: Rate limited — exponential backoff (see rate_limits)
+  5xx: Server error — retry with backoff, fail after 5 attempts

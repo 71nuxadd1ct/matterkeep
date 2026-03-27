@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set assets_prefix = "assets/" %}
+
+{% block title %}matterkeep archive{% endblock %}
+
+{% block body %}
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">matterkeep</span>
+      <input id="search-input" class="search-box" type="search" placeholder="Search…" autocomplete="off">
+    </div>
+
+    <div id="search-results" class="search-results hidden"></div>
+
+    <div id="channel-list">
+      {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
+      {% for type_key, label in types %}
+        {% set group = channels | selectattr("type", "equalto", type_key) | list %}
+        {% if group %}
+        <div class="channel-group">
+          <div class="channel-group-label">{{ label }}</div>
+          {% for ch in group | sort(attribute="display_name") %}
+          <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}"
+             href="{{ ch.id }}.html"
+             title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
+            {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
+            {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </nav>
+
+  <main class="main-panel">
+    <div class="welcome">
+      <h1>matterkeep</h1>
+      <p>Select a channel from the sidebar to browse messages.</p>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.__LUNR_DOCS__ = {{ lunr_docs | safe }};
+</script>
+{% endblock %}

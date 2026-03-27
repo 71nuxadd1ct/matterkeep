@@ -1,0 +1,17 @@
+server:
+  url: "https://mattermost.example.com"  # Required. No trailing slash.
+  insecure: false                         # Skip TLS verify. Not recommended.
+
+export:
+  output_dir: "./archive"                 # Archive root directory.
+  channels: []                            # Include only these channels (empty = all).
+  exclude_channels: []                    # Exclude these channels.
+  skip_files: false                       # Skip attachment downloads.
+  skip_render: false                      # Skip HTML rendering (JSON only).
+  include_left: false                     # Include public channels the user has left.
+  media_only: false                       # Download media only; skip message history.
+  per_page: 200                           # Posts per API page (max 200).
+
+render:
+  theme: "dark"                           # "dark" (default) or "light".
+  inline_images: true                     # Show images inline vs as download links.
