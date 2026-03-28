@@ -1,17 +1,25 @@
 import json
 import logging
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import mistune
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from matterkeep.config import Config
 from matterkeep.exceptions import MatterkeeperError
 
 logger = logging.getLogger(__name__)
+
+
+def _templates_dir() -> Path:
+    """Return the templates directory whether running normally or frozen by PyInstaller."""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "matterkeep" / "templates"  # type: ignore[attr-defined]
+    return Path(__file__).parent / "templates"
 
 _md = mistune.create_markdown(escape=True)
 
@@ -44,7 +52,7 @@ class Renderer:
         self._html_dir = self._output / "html"
         try:
             self._env = Environment(
-                loader=PackageLoader("matterkeep", "templates"),
+                loader=FileSystemLoader(str(_templates_dir())),
                 autoescape=select_autoescape(["html"]),
             )
         except Exception as e:
@@ -90,7 +98,7 @@ class Renderer:
         return result
 
     def _copy_assets(self) -> None:
-        assets_src = Path(__file__).parent / "templates" / "assets"
+        assets_src = _templates_dir() / "assets"
         assets_dst = self._html_dir / "assets"
         if assets_src.exists():
             shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)

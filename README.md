@@ -125,6 +125,34 @@ The manifest only includes files downloaded in the current run. To get the full 
 
 If your server uses a self-signed or internal CA certificate, set `MM_INSECURE=true` in `.env`, or pass `--insecure` on the command line. You can also point `REQUESTS_CA_BUNDLE` at your CA certificate instead.
 
+## Building a standalone executable
+
+matterkeep can be packaged into a single binary (no Python required) using PyInstaller. You must build on the target platform — there is no cross-compilation.
+
+```bash
+# Install dev dependencies (includes PyInstaller)
+pip install -e ".[dev]"
+
+# Build
+pyinstaller matterkeep.spec
+
+# Output
+dist/matterkeep        # Linux / macOS
+dist/matterkeep.exe    # Windows
+```
+
+Copy the output binary anywhere on the target machine and run it directly:
+
+```bash
+./matterkeep export --output-dir ./archive
+```
+
+On macOS, Gatekeeper may block the binary the first time. Right-click → Open to bypass, or run:
+
+```bash
+xattr -dr com.apple.quarantine dist/matterkeep
+```
+
 ## Development
 
 ```bash
