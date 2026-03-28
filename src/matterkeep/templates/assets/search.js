@@ -11,6 +11,7 @@
     this.ref('id');
     this.field('body', { boost: 2 });
     this.field('channel_name');
+    this.field('sender');
     docs.forEach((d) => this.add(d));
   });
 
@@ -19,36 +20,34 @@
 
   const input = document.getElementById('search-input');
   const resultsEl = document.getElementById('search-results');
+  const senderFilter = document.getElementById('sender-filter');
 
   if (!input || !resultsEl) return;
 
-  input.addEventListener('input', function () {
-    const q = this.value.trim();
-    if (!q) {
-      resultsEl.innerHTML = '';
-      resultsEl.classList.add('hidden');
-      return;
-    }
+  let currentResults = [];
 
-    let results;
-    try {
-      results = idx.search(q + '*');
-    } catch (_) {
-      results = [];
-    }
+  function renderResults() {
+    const senderQ = senderFilter ? senderFilter.value.trim().toLowerCase() : '';
+    const filtered = senderQ
+      ? currentResults.filter((r) => {
+          const doc = docsById[r.ref];
+          return doc && doc.sender.toLowerCase().includes(senderQ);
+        })
+      : currentResults;
 
-    if (!results.length) {
+    if (!filtered.length) {
       resultsEl.innerHTML = '<div class="search-result-item" style="color:var(--text-muted)">No results</div>';
       resultsEl.classList.remove('hidden');
       return;
     }
 
-    const html = results.slice(0, 30).map((r) => {
+    const html = filtered.slice(0, 30).map((r) => {
       const doc = docsById[r.ref];
       if (!doc) return '';
       const snippet = doc.body.substring(0, 80).replace(/\n/g, ' ');
+      const prefix = doc.channel_type === 'D' ? '@' : '#';
       return `<div class="search-result-item" data-channel="${doc.channel_id}" data-post="${doc.id}">
-        <div class="search-result-channel">#${escHtml(doc.channel_name)}</div>
+        <div class="search-result-channel">${prefix}${escHtml(doc.channel_name)} · ${escHtml(doc.sender)}</div>
         <div>${escHtml(snippet)}…</div>
       </div>`;
     }).join('');
@@ -63,7 +62,39 @@
         window.location.href = `${channelId}.html#post-${postId}`;
       });
     });
+  }
+
+  input.addEventListener('input', function () {
+    const q = this.value.trim();
+    if (!q) {
+      currentResults = [];
+      resultsEl.innerHTML = '';
+      resultsEl.classList.add('hidden');
+      return;
+    }
+
+    try {
+      currentResults = idx.search(q + '*');
+    } catch (_) {
+      currentResults = [];
+    }
+
+    if (!currentResults.length) {
+      resultsEl.innerHTML = '<div class="search-result-item" style="color:var(--text-muted)">No results</div>';
+      resultsEl.classList.remove('hidden');
+      return;
+    }
+
+    renderResults();
   });
+
+  if (senderFilter) {
+    senderFilter.addEventListener('input', function () {
+      if (currentResults.length || input.value.trim()) {
+        renderResults();
+      }
+    });
+  }
 
   function escHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

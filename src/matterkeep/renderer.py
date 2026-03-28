@@ -29,17 +29,28 @@ def _ts_to_str(ts_ms: int) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
 
 
-def _build_lunr_index(channels_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _build_lunr_index(
+    channels_data: list[dict[str, Any]],
+    channels_by_id: dict[str, Any],
+    users: dict[str, Any],
+) -> list[dict[str, Any]]:
     docs = []
     for ch_data in channels_data:
-        ch = ch_data["channel"]
+        ch_raw = ch_data["channel"]
+        ch = channels_by_id.get(ch_raw["id"], ch_raw)
+        channel_name = ch.get("display_name") or ch.get("name", "")
+        channel_type = ch_raw.get("type", "O")
         for post in ch_data.get("posts", []):
             if post.get("type", ""):
                 continue
+            user = users.get(post.get("user_id", ""), {})
+            sender = user.get("display_name") or user.get("username") or post.get("user_id", "")
             docs.append({
                 "id": post["id"],
-                "channel_id": ch["id"],
-                "channel_name": ch.get("display_name", ch["name"]),
+                "channel_id": ch_raw["id"],
+                "channel_name": channel_name,
+                "channel_type": channel_type,
+                "sender": sender,
                 "body": post.get("message", ""),
             })
     return docs
@@ -72,11 +83,11 @@ class Renderer:
             logger.warning("No channel data found to render.")
             return
 
-        lunr_docs = _build_lunr_index(channels_data)
+        channels = self._enrich_channels(channels_data)
+        channels_by_id = {ch["id"]: ch for ch in channels}
+        lunr_docs = _build_lunr_index(channels_data, channels_by_id, users)
         self._copy_assets()
         self._write_lunr_docs(lunr_docs)
-
-        channels = self._enrich_channels(channels_data)
         for ch_data in channels_data:
             self._render_channel(ch_data, users, channels)
 
