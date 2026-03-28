@@ -20,44 +20,37 @@
 
   const input = document.getElementById('search-input');
   const resultsEl = document.getElementById('search-results');
-  const senderFilter = document.getElementById('sender-filter');
 
   if (!input || !resultsEl) return;
 
-  let lunrResults = [];
-
-  function applyFilters() {
-    const q = input.value.trim();
-    const senderQ = senderFilter ? senderFilter.value.trim().toLowerCase() : '';
-
-    if (!q && !senderQ) {
+  input.addEventListener('input', function () {
+    const q = this.value.trim();
+    if (!q) {
       resultsEl.innerHTML = '';
       resultsEl.classList.add('hidden');
       return;
     }
 
-    let pool;
-    if (q) {
-      pool = lunrResults.map((r) => docsById[r.ref]).filter(Boolean);
-    } else {
-      pool = docs;
+    let results;
+    try {
+      results = idx.search(q + '*');
+    } catch (_) {
+      results = [];
     }
 
-    if (senderQ) {
-      pool = pool.filter((d) => (d.sender || '').toLowerCase().includes(senderQ));
-    }
-
-    if (!pool.length) {
+    if (!results.length) {
       resultsEl.innerHTML = '<div class="search-result-item" style="color:var(--text-muted)">No results</div>';
       resultsEl.classList.remove('hidden');
       return;
     }
 
-    const html = pool.slice(0, 30).map((doc) => {
+    const html = results.slice(0, 30).map((r) => {
+      const doc = docsById[r.ref];
+      if (!doc) return '';
       const snippet = doc.body.substring(0, 80).replace(/\n/g, ' ');
       const prefix = doc.channel_type === 'D' ? '@' : '#';
       return `<div class="search-result-item" data-channel="${doc.channel_id}" data-post="${doc.id}">
-        <div class="search-result-channel">${prefix}${escHtml(doc.channel_name)} · ${escHtml(doc.sender)}</div>
+        <div class="search-result-channel">${prefix}${escHtml(doc.channel_name)} · ${escHtml(doc.sender || '')}</div>
         <div>${escHtml(snippet)}…</div>
       </div>`;
     }).join('');
@@ -72,25 +65,7 @@
         window.location.href = `${channelId}.html#post-${postId}`;
       });
     });
-  }
-
-  input.addEventListener('input', function () {
-    const q = this.value.trim();
-    if (q) {
-      try {
-        lunrResults = idx.search(q + '*');
-      } catch (_) {
-        lunrResults = [];
-      }
-    } else {
-      lunrResults = [];
-    }
-    applyFilters();
   });
-
-  if (senderFilter) {
-    senderFilter.addEventListener('input', applyFilters);
-  }
 
   function escHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
