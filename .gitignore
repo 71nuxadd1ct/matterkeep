@@ -40,3 +40,5 @@ exports/
 test-*/
 *.tar.age
 .media-index.json
+*.zip
+*.exe

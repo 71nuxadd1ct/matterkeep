@@ -69,3 +69,16 @@
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 })();
+
+// Channel name filter — works on any page with #channel-filter
+(function () {
+  const input = document.getElementById('channel-filter');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    document.querySelectorAll('#channel-list .channel-link').forEach(function (el) {
+      const name = el.textContent.trim().toLowerCase();
+      el.classList.toggle('channel-filter-hidden', !!q && !name.includes(q));
+    });
+  });
+})();

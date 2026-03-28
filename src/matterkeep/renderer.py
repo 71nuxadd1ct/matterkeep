@@ -74,12 +74,13 @@ class Renderer:
 
         lunr_docs = _build_lunr_index(channels_data)
         self._copy_assets()
+        self._write_lunr_docs(lunr_docs)
 
         channels = self._enrich_channels(channels_data)
         for ch_data in channels_data:
             self._render_channel(ch_data, users, channels)
 
-        self._render_index(channels_data, lunr_docs, channels)
+        self._render_index(channels_data, channels)
         self._render_media_page(channels_data, users, channels)
         logger.info("HTML archive written to %s", self._html_dir)
 
@@ -96,6 +97,10 @@ class Renderer:
             with f.open() as fh:
                 result.append(json.load(fh))
         return result
+
+    def _write_lunr_docs(self, lunr_docs: list[dict[str, Any]]) -> None:
+        js = f"window.__LUNR_DOCS__ = {json.dumps(lunr_docs)};"
+        (self._html_dir / "assets" / "lunr-docs.js").write_text(js, encoding="utf-8")
 
     def _copy_assets(self) -> None:
         assets_src = _templates_dir() / "assets"
@@ -203,13 +208,11 @@ class Renderer:
     def _render_index(
         self,
         channels_data: list[dict[str, Any]],
-        lunr_docs: list[dict[str, Any]],
         channels: list[dict[str, Any]],
     ) -> None:
         tmpl = self._env.get_template("index.html")
         html = tmpl.render(
             channels=channels,
-            lunr_docs=json.dumps(lunr_docs),
             theme=self._config.render.theme,
         )
         (self._html_dir / "index.html").write_text(html, encoding="utf-8")
