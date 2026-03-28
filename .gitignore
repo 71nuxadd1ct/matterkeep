@@ -36,5 +36,6 @@ coverage.xml
 .hypothesis/
 .DS_Store
 archive/
+exports/
 *.tar.age
 .media-index.json
