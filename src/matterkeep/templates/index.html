@@ -8,10 +8,14 @@
   <nav class="sidebar">
     <div class="sidebar-header">
       <span class="logo">matterkeep</span>
-      <input id="search-input" class="search-box" type="search" placeholder="Search…" autocomplete="off">
+      <input id="search-input" class="search-box" type="search" placeholder="Search messages…" autocomplete="off">
     </div>
 
     <div id="search-results" class="search-results hidden"></div>
+
+    <div class="channel-filter-wrap">
+      <input id="channel-filter" class="search-box channel-filter-input" type="search" placeholder="Filter channels…" autocomplete="off">
+    </div>
 
     <div id="channel-list-top">
       <div class="channel-group">
@@ -56,7 +60,6 @@
 
 {% block scripts %}
 <script>
-window.__LUNR_DOCS__ = {{ lunr_docs | safe }};
 document.getElementById('show-empty').addEventListener('change', function () {
   document.getElementById('channel-list').classList.toggle('show-empty', this.checked);
 });

@@ -203,6 +203,35 @@ def encrypt(output_dir: Path, recipient: str | None, output_path: Path | None, s
         sys.exit(1)
 
 
+@main.command("render")
+@click.option("--output-dir", type=click.Path(path_type=Path), default=None,
+              help="Archive directory to render (default: from config).")
+@click.option("--config", "config_path", type=click.Path(path_type=Path), default=None)
+def render_cmd(output_dir: Path | None, config_path: Path | None) -> None:
+    """Re-render the HTML archive from existing exported data. No server connection needed."""
+    try:
+        cfg_path = config_path or (Path("config.yaml") if Path("config.yaml").exists() else None)
+        cfg = load_config(cfg_path)
+    except ConfigError as e:
+        console.print(f"[red]Config error:[/red] {e}")
+        sys.exit(1)
+
+    if output_dir:
+        cfg.export.output_dir = output_dir
+
+    if not (cfg.export.output_dir / "data").exists():
+        console.print(f"[red]No exported data found at {cfg.export.output_dir / 'data'}[/red]")
+        sys.exit(1)
+
+    try:
+        from matterkeep.renderer import Renderer
+        Renderer(cfg).run()
+        console.print(f"[green]Rendered:[/green] {cfg.export.output_dir / 'html' / 'index.html'}")
+    except MatterkeeperError as e:
+        console.print(f"[red]Render failed:[/red] {e}")
+        sys.exit(1)
+
+
 @main.command()
 @click.argument("query")
 @click.option("--output-dir", type=click.Path(path_type=Path), default=Path("./archive"),

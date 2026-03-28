@@ -117,6 +117,15 @@ body {
 .search-result-item:hover { background: var(--bg-message-hover); }
 .search-result-channel { color: var(--text-muted); font-size: 11px; }
 
+.channel-filter-wrap {
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.channel-filter-input { font-size: 12px; padding: 4px 8px; }
+
+.channel-link.channel-filter-hidden { display: none !important; }
+
 .sidebar-toggle {
   padding: 6px 14px;
   border-bottom: 1px solid var(--border);
