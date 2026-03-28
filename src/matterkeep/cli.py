@@ -60,6 +60,8 @@ def main() -> None:
               help="Skip HTML rendering (JSON export only).")
 @click.option("-v", "--verbose", count=True,
               help="Increase verbosity (-v INFO, -vv DEBUG).")
+@click.option("--server", default=None,
+              help="Mattermost server URL (overrides MM_URL / config).")
 @click.option("--insecure", is_flag=True, default=False,
               help="Disable TLS certificate verification (NOT recommended).")
 def export(
@@ -74,6 +76,7 @@ def export(
     media_manifest: bool,
     skip_render: bool,
     verbose: int,
+    server: str | None,
     insecure: bool,
 ) -> None:
     """Run a full or incremental export."""
@@ -106,6 +109,8 @@ def export(
         cfg.export.media_manifest = True
     if skip_render:
         cfg.export.skip_render = True
+    if server:
+        cfg.server.url = server
     if insecure:
         cfg.server.insecure = True
 
