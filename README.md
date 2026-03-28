@@ -10,6 +10,7 @@ matterkeep exports everything a regular Mattermost user can see: channels, priva
 - Authenticates with username + password (MFA/TOTP supported). PAT via `MM_TOKEN` env var as an alternative.
 - Incremental sync — re-runs only fetch posts newer than the last export.
 - `--media-only` downloads attachments without saving message history.
+- `--media-manifest` writes `media/manifest.csv` — every downloaded file with sender, timestamp, and channel.
 - Optional `age` encryption of the archive.
 - Client-side full-text search via Lunr.js. Dark theme by default.
 
@@ -64,6 +65,9 @@ matterkeep export --skip-files --skip-render --output-dir ./archive
 # Download media only (no message history written)
 matterkeep export --media-only --output-dir ./archive
 
+# Download media and write a CSV log of who sent what, when
+matterkeep export --media-only --media-manifest --output-dir ./archive
+
 # Force full re-export (ignore sync state)
 matterkeep export --full --output-dir ./archive
 ```
@@ -83,6 +87,17 @@ matterkeep encrypt --output-dir ./archive  # passphrase mode
 # Search exported JSON from the terminal
 matterkeep search "keyword" --output-dir ./archive
 ```
+
+### Media manifest
+
+`--media-manifest` generates `media/manifest.csv` in the archive directory. Each row covers one downloaded file:
+
+```
+timestamp,channel,sender,filename,size,mime_type,local_path
+2026-01-15 10:23 UTC,recruiting,Alice Smith,interview-rubric.pdf,42.1 KB,application/pdf,media/...
+```
+
+The manifest only includes files downloaded in the current run. To get the full manifest for all files ever downloaded, use `--full --media-manifest`.
 
 ### Self-signed certificates
 

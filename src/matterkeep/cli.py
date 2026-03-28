@@ -54,6 +54,8 @@ def main() -> None:
               help="Skip file and image downloads.")
 @click.option("--media-only", is_flag=True, default=False,
               help="Download media only; skip writing message history.")
+@click.option("--media-manifest", is_flag=True, default=False,
+              help="Write media/manifest.csv listing every downloaded file with sender and timestamp.")
 @click.option("--skip-render", is_flag=True, default=False,
               help="Skip HTML rendering (JSON export only).")
 @click.option("-v", "--verbose", count=True,
@@ -69,6 +71,7 @@ def export(
     include_left: bool,
     skip_files: bool,
     media_only: bool,
+    media_manifest: bool,
     skip_render: bool,
     verbose: int,
     insecure: bool,
@@ -99,6 +102,8 @@ def export(
         cfg.export.skip_files = True
     if media_only:
         cfg.export.media_only = True
+    if media_manifest:
+        cfg.export.media_manifest = True
     if skip_render:
         cfg.export.skip_render = True
     if insecure:

@@ -1,3 +1,4 @@
+import csv
 import json
 import logging
 import os
@@ -7,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TaskID, TextColumn
 
 from matterkeep.client import MMClient
 from matterkeep.config import Config
@@ -143,6 +144,7 @@ class Exporter:
         self._config = config
         self._output = config.export.output_dir
         self._users: dict[str, User] = self._load_existing_users()
+        self._manifest: list[dict[str, str]] = []
 
     def run(self) -> None:
         self._output.mkdir(parents=True, exist_ok=True)
@@ -161,16 +163,26 @@ class Exporter:
             BarColumn(),
             MofNCompleteColumn(),
         ) as progress:
-            task = progress.add_task("Exporting channels", total=len(channels))
-            for channel in channels:
-                progress.update(task, description=f"[cyan]{channel.display_name}")
-                self._export_channel(channel, state)
-                progress.advance(task)
+            channel_task = progress.add_task("Channels", total=len(channels))
+            detail_task = progress.add_task("", total=None, visible=False)
 
-        if not self._config.export.skip_files:
-            self._download_missing_files(channels)
+            for i, channel in enumerate(channels):
+                progress.update(
+                    channel_task,
+                    description=f"[bold cyan]#{channel.display_name}[/] [dim]({i + 1}/{len(channels)})[/]",
+                )
+                progress.update(detail_task, visible=True, description="")
+                self._export_channel(channel, state, progress, detail_task)
+                progress.update(detail_task, visible=False)
+                progress.advance(channel_task)
+
+            if not self._config.export.skip_files:
+                progress.update(detail_task, visible=True)
+                self._download_missing_files(channels, progress, detail_task)
 
         self._save_users()
+        if self._config.export.media_manifest and self._manifest:
+            self._write_manifest()
         _save_sync_state(self._output, state)
         logger.info("Export complete. Sync state saved.")
 
@@ -216,7 +228,13 @@ class Exporter:
 
         return result
 
-    def _export_channel(self, channel: Channel, state: SyncState) -> None:
+    def _export_channel(
+        self,
+        channel: Channel,
+        state: SyncState,
+        progress: Progress,
+        detail_task: TaskID,
+    ) -> None:
         cfg = self._config.export
         data_dir = self._output / "data"
         channel_file = data_dir / f"{channel.id}.json"
@@ -240,6 +258,10 @@ class Exporter:
 
         while True:
             params["page"] = page
+            progress.update(
+                detail_task,
+                description=f"  [dim]fetching page {page + 1} — {new_count} posts so far[/]",
+            )
             try:
                 raw = self._client.get(f"channels/{channel.id}/posts", params=params)
             except APIError as e:
@@ -265,9 +287,9 @@ class Exporter:
                     latest_ts = post.create_at
 
                 if not cfg.skip_files:
-                    self._download_files(post, channel)
+                    self._download_files(post, channel, progress, detail_task)
 
-                self._collect_user(post.user_id)
+                self._collect_user(post.user_id)  # must come after download_files
                 new_count += 1
 
             if len(order) < cfg.per_page:
@@ -292,29 +314,44 @@ class Exporter:
             since,
         )
 
-    def _download_files(self, post: Post, channel: Channel) -> None:
+    def _download_files(
+        self,
+        post: Post,
+        channel: Channel,
+        progress: Progress,
+        detail_task: TaskID,
+    ) -> None:
         media_dir = self._output / "media" / channel.id
         media_dir.mkdir(parents=True, exist_ok=True)
         os.chmod(media_dir, 0o700)
 
         for attachment in post.files:
             dest = media_dir / f"{attachment.id}_{attachment.name}"
-            if dest.exists():
+            already_exists = dest.exists()
+            if already_exists:
                 attachment.local_path = str(dest.relative_to(self._output))
-                continue
-            try:
-                chunks = self._client.get_stream(f"files/{attachment.id}")
-                with dest.open("wb") as f:
-                    for chunk in chunks:
-                        f.write(chunk)
-                os.chmod(dest, 0o600)
-                attachment.local_path = str(dest.relative_to(self._output))
-                logger.debug("Downloaded %s", dest.name)
-            except APIError as e:
-                if e.status_code == 403:
-                    logger.warning("File %s: access denied, skipping.", attachment.id)
-                else:
-                    logger.warning("File %s: download failed (%s), skipping.", attachment.id, e)
+            else:
+                progress.update(
+                    detail_task,
+                    description=f"  [dim]downloading [/][cyan]{attachment.name}[/]",
+                )
+                try:
+                    chunks = self._client.get_stream(f"files/{attachment.id}")
+                    with dest.open("wb") as f:
+                        for chunk in chunks:
+                            f.write(chunk)
+                    os.chmod(dest, 0o600)
+                    attachment.local_path = str(dest.relative_to(self._output))
+                    logger.debug("Downloaded %s", dest.name)
+                except APIError as e:
+                    if e.status_code == 403:
+                        logger.warning("File %s: access denied, skipping.", attachment.id)
+                    else:
+                        logger.warning("File %s: download failed (%s), skipping.", attachment.id, e)
+                    continue
+
+            if self._config.export.media_manifest and attachment.local_path:
+                self._record_manifest(post, channel, attachment)
 
     def _collect_user(self, user_id: str) -> None:
         if user_id in self._users:
@@ -325,7 +362,12 @@ class Exporter:
         except APIError:
             self._users[user_id] = User(id=user_id, username=user_id, display_name=user_id)
 
-    def _download_missing_files(self, channels: list[Channel]) -> None:
+    def _download_missing_files(
+        self,
+        channels: list[Channel],
+        progress: Progress,
+        detail_task: TaskID,
+    ) -> None:
         """Download any files from existing JSON that were never fetched."""
         data_dir = self._output / "data"
         if not data_dir.exists():
@@ -360,6 +402,10 @@ class Exporter:
                     media_dir = self._output / "media" / channel_id
                     media_dir.mkdir(parents=True, exist_ok=True)
                     dest = media_dir / f"{attachment.id}_{attachment.name}"
+                    progress.update(
+                        detail_task,
+                        description=f"  [dim]downloading (backfill) [/][cyan]{attachment.name}[/]",
+                    )
                     try:
                         chunks = self._client.get_stream(f"files/{attachment.id}")
                         with dest.open("wb") as f:
@@ -367,8 +413,21 @@ class Exporter:
                                 f.write(chunk)
                         os.chmod(dest, 0o600)
                         file_dict["local_path"] = str(dest.relative_to(self._output))
+                        attachment.local_path = file_dict["local_path"]
                         changed = True
                         logger.debug("Downloaded missing file %s", dest.name)
+                        if self._config.export.media_manifest:
+                            post_obj = Post(
+                                id=post_dict["id"],
+                                channel_id=channel_id,
+                                user_id=post_dict.get("user_id", ""),
+                                message="",
+                                create_at=post_dict.get("create_at", 0),
+                                update_at=post_dict.get("update_at", 0),
+                                root_id=post_dict.get("root_id"),
+                                type=post_dict.get("type", ""),
+                            )
+                            self._record_manifest(post_obj, channel, attachment)
                     except APIError as e:
                         if e.status_code == 403:
                             logger.warning("File %s: access denied, skipping.", attachment.id)
@@ -377,6 +436,31 @@ class Exporter:
 
             if changed:
                 _write_atomic(channel_file, data)
+
+    def _record_manifest(self, post: Post, channel: Channel, attachment: FileAttachment) -> None:
+        user = self._users.get(post.user_id)
+        sender = user.display_name.strip() or user.username if user else post.user_id
+        ts = datetime.fromtimestamp(post.create_at / 1000, tz=timezone.utc)
+        size_kb = f"{attachment.size / 1024:.1f} KB" if attachment.size else ""
+        self._manifest.append({
+            "timestamp": ts.strftime("%Y-%m-%d %H:%M UTC"),
+            "channel": channel.display_name,
+            "sender": sender,
+            "filename": attachment.name,
+            "size": size_kb,
+            "mime_type": attachment.mime_type,
+            "local_path": attachment.local_path or "",
+        })
+
+    def _write_manifest(self) -> None:
+        dest = self._output / "media" / "manifest.csv"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        fieldnames = ["timestamp", "channel", "sender", "filename", "size", "mime_type", "local_path"]
+        with dest.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(self._manifest)
+        logger.info("Media manifest written to %s (%d entries)", dest, len(self._manifest))
 
     def _load_existing_users(self) -> dict[str, User]:
         path = self._output / "users.json"
