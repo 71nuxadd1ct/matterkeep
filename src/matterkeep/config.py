@@ -24,6 +24,7 @@ class ExportConfig:
     skip_render: bool = False
     include_left: bool = False
     media_only: bool = False
+    media_manifest: bool = False
     per_page: int = 200
 
 
@@ -77,6 +78,7 @@ def load(config_path: Path | None = None) -> Config:
         skip_render=bool(export_raw.get("skip_render", False)),
         include_left=bool(export_raw.get("include_left", False)),
         media_only=bool(export_raw.get("media_only", False)),
+        media_manifest=bool(export_raw.get("media_manifest", False)),
         per_page=int(export_raw.get("per_page", 200)),
     )
 
