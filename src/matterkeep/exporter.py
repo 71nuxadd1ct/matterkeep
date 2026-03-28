@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TaskID, TextColumn
+from rich.progress import Progress, SpinnerColumn, TaskID, TextColumn
 
 from matterkeep.client import MMClient
 from matterkeep.config import Config
@@ -51,7 +51,8 @@ def _resolve_dest(media_dir: Path, file_id: str, filename: str) -> tuple[Path, b
             pass
 
     if file_id in index:
-        return media_dir / index[file_id], True
+        dest = media_dir / index[file_id]
+        return dest, dest.exists()
 
     # Resolve collision: if filename is taken by a different file, add suffix
     stem = Path(filename).stem
@@ -194,8 +195,6 @@ class Exporter:
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            MofNCompleteColumn(),
         ) as progress:
             channel_task = progress.add_task("Channels", total=len(channels))
             detail_task = progress.add_task("", total=None, visible=False)
@@ -314,14 +313,14 @@ class Exporter:
                     continue
                 post = _parse_post(raw_post, channel.id)
 
-                if not cfg.media_only:
-                    existing_posts[post.id] = _post_to_dict(post)
-
                 if post.create_at > latest_ts:
                     latest_ts = post.create_at
 
                 if not cfg.skip_files:
                     self._download_files(post, channel, progress, detail_task)
+
+                if not cfg.media_only:
+                    existing_posts[post.id] = _post_to_dict(post)
 
                 self._collect_user(post.user_id)  # must come after download_files
                 new_count += 1
@@ -439,6 +438,7 @@ class Exporter:
                     dest, already = _resolve_dest(media_dir, attachment.id, attachment.name)
                     if already:
                         file_dict["local_path"] = str(dest.relative_to(self._output))
+                        changed = True
                         continue
                     progress.update(
                         detail_task,
