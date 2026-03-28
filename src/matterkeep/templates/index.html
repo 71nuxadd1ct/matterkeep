@@ -13,6 +13,10 @@
 
     <div id="search-results" class="search-results hidden"></div>
 
+    <div class="sidebar-toggle">
+      <label><input type="checkbox" id="show-empty"> Show empty channels</label>
+    </div>
+
     <div id="channel-list">
       {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
       {% for type_key, label in types %}
@@ -21,7 +25,7 @@
         <div class="channel-group">
           <div class="channel-group-label">{{ label }}</div>
           {% for ch in group | sort(attribute="display_name") %}
-          <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}"
+          <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
              href="{{ ch.id }}.html"
              title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
             {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
@@ -46,5 +50,8 @@
 {% block scripts %}
 <script>
 window.__LUNR_DOCS__ = {{ lunr_docs | safe }};
+document.getElementById('show-empty').addEventListener('change', function () {
+  document.getElementById('channel-list').classList.toggle('show-empty', this.checked);
+});
 </script>
 {% endblock %}

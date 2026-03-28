@@ -67,10 +67,11 @@ class Renderer:
         lunr_docs = _build_lunr_index(channels_data)
         self._copy_assets()
 
+        channels = self._enrich_channels(channels_data)
         for ch_data in channels_data:
-            self._render_channel(ch_data, users)
+            self._render_channel(ch_data, users, channels)
 
-        self._render_index(channels_data, lunr_docs)
+        self._render_index(channels_data, lunr_docs, channels)
         logger.info("HTML archive written to %s", self._html_dir)
 
     def _load_users(self) -> dict[str, Any]:
@@ -93,7 +94,15 @@ class Renderer:
         if assets_src.exists():
             shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
-    def _render_channel(self, ch_data: dict[str, Any], users: dict[str, Any]) -> None:
+    def _enrich_channels(self, channels_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        result = []
+        for cd in channels_data:
+            ch = dict(cd["channel"])
+            ch["has_real_posts"] = any(not p.get("type") for p in cd.get("posts", []))
+            result.append(ch)
+        return result
+
+    def _render_channel(self, ch_data: dict[str, Any], users: dict[str, Any], channels: list[dict[str, Any]]) -> None:
         ch = ch_data["channel"]
         posts = ch_data.get("posts", [])
 
@@ -128,6 +137,7 @@ class Renderer:
         html = tmpl.render(
             channel=ch,
             posts=rendered_posts,
+            channels=channels,
             theme=self._config.render.theme,
             inline_images=self._config.render.inline_images,
         )
@@ -138,8 +148,8 @@ class Renderer:
         self,
         channels_data: list[dict[str, Any]],
         lunr_docs: list[dict[str, Any]],
+        channels: list[dict[str, Any]],
     ) -> None:
-        channels = [cd["channel"] for cd in channels_data]
         tmpl = self._env.get_template("index.html")
         html = tmpl.render(
             channels=channels,

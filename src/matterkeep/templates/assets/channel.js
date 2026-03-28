@@ -37,6 +37,10 @@
     const active = text || sender || from || to;
     let visible = 0;
 
+    document.querySelectorAll('#messages > .message.system-message').forEach(msg => {
+      msg.classList.toggle('hidden', !!active);
+    });
+
     messages.forEach(msg => {
       const bodyEl     = msg.querySelector('.message-body');
       const usernameEl = msg.querySelector('.username');
