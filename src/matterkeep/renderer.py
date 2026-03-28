@@ -72,6 +72,7 @@ class Renderer:
             self._render_channel(ch_data, users, channels)
 
         self._render_index(channels_data, lunr_docs, channels)
+        self._render_media_page(channels_data, users, channels)
         logger.info("HTML archive written to %s", self._html_dir)
 
     def _load_users(self) -> dict[str, Any]:
@@ -143,6 +144,53 @@ class Renderer:
         )
         out = self._html_dir / f"{ch['id']}.html"
         out.write_text(html, encoding="utf-8")
+
+    def _render_media_page(
+        self,
+        channels_data: list[dict[str, Any]],
+        users: dict[str, Any],
+        channels: list[dict[str, Any]],
+    ) -> None:
+        items = []
+        for cd in channels_data:
+            ch = cd["channel"]
+            for post in cd.get("posts", []):
+                if post.get("type"):
+                    continue
+                user = users.get(post.get("user_id", ""), {})
+                sender = user.get("display_name") or user.get("username") or post.get("user_id", "?")
+                for f in post.get("files", []):
+                    size = f.get("size", 0)
+                    if size >= 1_048_576:
+                        size_str = f"{size / 1_048_576:.1f} MB"
+                    elif size:
+                        size_str = f"{size / 1024:.1f} KB"
+                    else:
+                        size_str = ""
+                    mime = f.get("mime_type", "")
+                    items.append({
+                        "filename": f.get("name", ""),
+                        "local_path": f.get("local_path") or "",
+                        "is_image": mime.startswith("image/"),
+                        "size": size,
+                        "size_str": size_str,
+                        "channel_id": ch["id"],
+                        "channel_display": ch.get("display_name", ch.get("name", "")),
+                        "channel_type": ch.get("type", "O"),
+                        "sender": sender,
+                        "timestamp": _ts_to_str(post["create_at"]),
+                        "create_at": post["create_at"],
+                    })
+
+        items.sort(key=lambda x: x["create_at"], reverse=True)
+
+        tmpl = self._env.get_template("media.html")
+        html = tmpl.render(
+            items=items,
+            channels=channels,
+            theme=self._config.render.theme,
+        )
+        (self._html_dir / "media.html").write_text(html, encoding="utf-8")
 
     def _render_index(
         self,
