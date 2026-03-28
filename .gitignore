@@ -37,3 +37,4 @@ coverage.xml
 .DS_Store
 archive/
 *.tar.age
+.media-index.json
