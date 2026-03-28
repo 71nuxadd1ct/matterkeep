@@ -35,6 +35,40 @@ def _sanitize_filename(name: str) -> str:
     return name[:_MAX_FILENAME_LEN] or "file"
 
 
+def _resolve_dest(media_dir: Path, file_id: str, filename: str) -> tuple[Path, bool]:
+    """Return (destination path, already_downloaded).
+
+    Checks a per-directory index of file_id → filename so re-runs
+    skip already-downloaded files and collisions get a numeric suffix.
+    """
+    index_path = media_dir / ".media-index.json"
+    index: dict[str, str] = {}
+    if index_path.exists():
+        try:
+            with index_path.open() as f:
+                index = json.load(f)
+        except Exception:
+            pass
+
+    if file_id in index:
+        return media_dir / index[file_id], True
+
+    # Resolve collision: if filename is taken by a different file, add suffix
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix
+    candidate = filename
+    n = 1
+    while any(v == candidate for v in index.values()) and (media_dir / candidate).exists():
+        n += 1
+        candidate = f"{stem}_{n}{suffix}"
+
+    index[file_id] = candidate
+    with index_path.open("w") as f:
+        json.dump(index, f)
+
+    return media_dir / candidate, False
+
+
 def _parse_post(raw: dict[str, Any], channel_id: str) -> Post:
     meta = raw.get("metadata", {}) or {}
     files = [
@@ -321,13 +355,12 @@ class Exporter:
         progress: Progress,
         detail_task: TaskID,
     ) -> None:
-        media_dir = self._output / "media" / channel.id
+        media_dir = self._output / "media" / channel.name
         media_dir.mkdir(parents=True, exist_ok=True)
         os.chmod(media_dir, 0o700)
 
         for attachment in post.files:
-            dest = media_dir / f"{attachment.id}_{attachment.name}"
-            already_exists = dest.exists()
+            dest, already_exists = _resolve_dest(media_dir, attachment.id, attachment.name)
             if already_exists:
                 attachment.local_path = str(dest.relative_to(self._output))
             else:
@@ -384,6 +417,8 @@ class Exporter:
             with channel_file.open() as f:
                 data = json.load(f)
 
+            channel_name = data.get("channel", {}).get("name", channel_id)
+
             changed = False
             for post_dict in data.get("posts", []):
                 for file_dict in post_dict.get("files", []):
@@ -399,9 +434,12 @@ class Exporter:
                         mime_type=file_dict.get("mime_type", "application/octet-stream"),
                         local_path=file_dict.get("local_path"),
                     )
-                    media_dir = self._output / "media" / channel_id
+                    media_dir = self._output / "media" / channel_name
                     media_dir.mkdir(parents=True, exist_ok=True)
-                    dest = media_dir / f"{attachment.id}_{attachment.name}"
+                    dest, already = _resolve_dest(media_dir, attachment.id, attachment.name)
+                    if already:
+                        file_dict["local_path"] = str(dest.relative_to(self._output))
+                        continue
                     progress.update(
                         detail_task,
                         description=f"  [dim]downloading (backfill) [/][cyan]{attachment.name}[/]",

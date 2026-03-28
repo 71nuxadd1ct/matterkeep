@@ -20,7 +20,18 @@
       {% if channel.purpose %}<p class="channel-purpose">{{ channel.purpose }}</p>{% endif %}
     </div>
 
-    <div class="messages">
+    <div class="filter-bar">
+      <input type="search" id="filter-text" placeholder="Filter messages…" autocomplete="off">
+      <select id="filter-sender"><option value="">All senders</option></select>
+      <span class="filter-label">From</span>
+      <input type="date" id="filter-from">
+      <span class="filter-label">To</span>
+      <input type="date" id="filter-to">
+      <span id="filter-count" class="filter-count"></span>
+      <button id="filter-clear" class="filter-clear">Clear</button>
+    </div>
+
+    <div class="messages" id="messages">
       {% for item in posts %}
         {% set post = item.post %}
         <div class="message {% if post.type %}system-message{% endif %}" id="post-{{ post.id }}">
@@ -38,7 +49,9 @@
               {% for f in post.files %}
                 {% if inline_images and f.mime_type and f.mime_type.startswith("image/") and f.local_path %}
                   <div class="attachment-image">
-                    <img src="../{{ f.local_path }}" alt="{{ f.name }}" loading="lazy">
+                    <a href="../{{ f.local_path }}" target="_blank" title="{{ f.name }}">
+                      <img src="../{{ f.local_path }}" alt="{{ f.name }}" loading="lazy">
+                    </a>
                   </div>
                 {% elif f.local_path %}
                   <a class="attachment-file" href="../{{ f.local_path }}" download="{{ f.name }}">
@@ -87,4 +100,8 @@
     </div>
   </main>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="../assets/channel.js"></script>
 {% endblock %}

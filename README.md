@@ -13,6 +13,9 @@ matterkeep exports everything a regular Mattermost user can see: channels, priva
 - `--media-manifest` writes `media/manifest.csv` — every downloaded file with sender, timestamp, and channel.
 - Optional `age` encryption of the archive.
 - Client-side full-text search via Lunr.js. Dark theme by default.
+- Per-channel filter bar — filter messages by keyword, sender, and date range.
+- Image attachments render as thumbnails inline; click to open full size.
+- Media organised into human-readable folders by channel name.
 
 **Architecture:** CLI (click) → Exporter → API Client (mattermostdriver) → Archive Writer (JSON + Jinja2 HTML).
 
@@ -59,6 +62,9 @@ matterkeep export --output-dir ./archive
 # Limit to specific channels
 matterkeep export --channels general,random --output-dir ./archive
 
+# Exclude specific channels
+matterkeep export --exclude-channels recruiting,random --output-dir ./archive
+
 # JSON only, no file downloads, no HTML rendering
 matterkeep export --skip-files --skip-render --output-dir ./archive
 
@@ -68,7 +74,8 @@ matterkeep export --media-only --output-dir ./archive
 # Download media and write a CSV log of who sent what, when
 matterkeep export --media-only --media-manifest --output-dir ./archive
 
-# Force full re-export (ignore sync state)
+# Force full re-export (ignore sync state) — use this to fetch messages
+# after a prior --media-only run; already-downloaded files are skipped
 matterkeep export --full --output-dir ./archive
 ```
 

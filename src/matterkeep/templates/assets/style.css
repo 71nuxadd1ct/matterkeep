@@ -174,6 +174,52 @@ body {
   flex-shrink: 0;
 }
 
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.filter-bar input[type="search"],
+.filter-bar select,
+.filter-bar input[type="date"] {
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 5px 8px;
+  outline: none;
+}
+
+.filter-bar input[type="search"] { flex: 1; min-width: 150px; }
+
+.filter-bar input:focus,
+.filter-bar select:focus { border-color: var(--accent); }
+
+.filter-bar input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+
+.filter-label { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.filter-count { color: var(--text-muted); font-size: 12px; white-space: nowrap; margin-left: auto; }
+
+.filter-clear {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.filter-clear:hover { border-color: var(--accent); color: var(--text); }
+
+.message.hidden { display: none; }
+
 .channel-header h2 { font-size: 18px; font-weight: 700; }
 .channel-purpose { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 
@@ -226,13 +272,21 @@ body {
 
 .attachments { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
 
+.attachment-image a {
+  display: inline-block;
+}
+
 .attachment-image img {
-  max-width: 400px;
-  max-height: 300px;
-  border-radius: 6px;
+  max-width: 120px;
+  max-height: 90px;
+  border-radius: 4px;
   border: 1px solid var(--border);
   display: block;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
+
+.attachment-image img:hover { opacity: 0.85; }
 
 .attachment-file {
   display: inline-flex;
