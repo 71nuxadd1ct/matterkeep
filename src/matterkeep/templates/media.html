@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% set assets_prefix = "assets/" %}
+
+{% block title %}Media — matterkeep{% endblock %}
+
+{% block body %}
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="logo" href="index.html">matterkeep</a>
+    </div>
+
+    <div class="sidebar-toggle">
+      <label><input type="checkbox" id="show-empty"> Show empty channels</label>
+    </div>
+
+    <div id="channel-list">
+      <div class="channel-group">
+        <div class="channel-group-label">Archive</div>
+        <a class="channel-link channel-active" href="media.html">Media</a>
+      </div>
+      {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
+      {% for type_key, label in types %}
+        {% set group = channels | selectattr("type", "equalto", type_key) | list %}
+        {% if group %}
+        <div class="channel-group">
+          <div class="channel-group-label">{{ label }}</div>
+          {% for ch in group | sort(attribute="display_name") %}
+          <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
+             href="{{ ch.id }}.html"
+             title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
+            {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
+            {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </nav>
+
+  <main class="main-panel">
+    <div class="channel-header">
+      <h2>Media</h2>
+      <p class="channel-purpose">{{ items | length }} file{{ 's' if items | length != 1 }} across all channels</p>
+    </div>
+
+    <div class="filter-bar">
+      <input type="search" id="filter-text" placeholder="Filter by filename…" autocomplete="off">
+      <select id="filter-channel"><option value="">All channels</option></select>
+      <select id="filter-sender"><option value="">All senders</option></select>
+      <span id="filter-count" class="filter-count"></span>
+      <button id="filter-clear" class="filter-clear">Clear</button>
+    </div>
+
+    <div class="media-table-wrap">
+      <table class="media-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>File</th>
+            <th>Channel</th>
+            <th>Sender</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="media-rows">
+          {% for item in items %}
+          <tr class="media-row"
+              data-filename="{{ item.filename | lower }}"
+              data-channel="{{ item.channel_display }}"
+              data-sender="{{ item.sender }}">
+            <td class="media-thumb-cell">
+              {% if item.is_image and item.local_path %}
+              <a href="../{{ item.local_path }}" target="_blank">
+                <img src="../{{ item.local_path }}" alt="{{ item.filename }}" loading="lazy" class="media-thumb">
+              </a>
+              {% elif item.local_path %}
+              <span class="media-icon">📎</span>
+              {% endif %}
+            </td>
+            <td class="media-name-cell">
+              {% if item.local_path %}
+              <a class="media-filename" href="../{{ item.local_path }}" download="{{ item.filename }}">{{ item.filename }}</a>
+              {% else %}
+              <span class="media-filename-unavailable">{{ item.filename }}</span>
+              {% endif %}
+              {% if item.size %}<span class="file-size">{{ item.size_str }}</span>{% endif %}
+            </td>
+            <td><a class="media-channel-link" href="{{ item.channel_id }}.html">{% if item.channel_type == "D" %}@{% else %}#{% endif %}{{ item.channel_display }}</a></td>
+            <td class="media-sender">{{ item.sender }}</td>
+            <td class="media-date">{{ item.timestamp }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const rows = Array.from(document.querySelectorAll('.media-row'));
+
+  // Populate channel dropdown
+  const channelSel = document.getElementById('filter-channel');
+  [...new Set(rows.map(r => r.dataset.channel))].sort().forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    channelSel.appendChild(o);
+  });
+
+  // Populate sender dropdown
+  const senderSel = document.getElementById('filter-sender');
+  [...new Set(rows.map(r => r.dataset.sender))].sort().forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    senderSel.appendChild(o);
+  });
+
+  function applyFilters() {
+    const text    = document.getElementById('filter-text').value.trim().toLowerCase();
+    const channel = channelSel.value;
+    const sender  = senderSel.value;
+    const active  = text || channel || sender;
+    let visible   = 0;
+    rows.forEach(row => {
+      let show = true;
+      if (text    && !row.dataset.filename.includes(text)) show = false;
+      if (channel && row.dataset.channel !== channel)      show = false;
+      if (sender  && row.dataset.sender  !== sender)       show = false;
+      row.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    document.getElementById('filter-count').textContent =
+      active ? `${visible} of ${rows.length} files` : '';
+  }
+
+  ['filter-text', 'filter-channel', 'filter-sender'].forEach(id => {
+    document.getElementById(id).addEventListener('input', applyFilters);
+  });
+
+  document.getElementById('filter-clear').addEventListener('click', () => {
+    document.getElementById('filter-text').value = '';
+    channelSel.value = '';
+    senderSel.value  = '';
+    applyFilters();
+  });
+
+  document.getElementById('show-empty').addEventListener('change', function () {
+    document.getElementById('channel-list').classList.toggle('show-empty', this.checked);
+  });
+})();
+</script>
+{% endblock %}
