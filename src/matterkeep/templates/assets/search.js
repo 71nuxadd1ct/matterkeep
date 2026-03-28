@@ -44,7 +44,7 @@
     }
 
     if (senderQ) {
-      pool = pool.filter((d) => d.sender.toLowerCase().includes(senderQ));
+      pool = pool.filter((d) => (d.sender || '').toLowerCase().includes(senderQ));
     }
 
     if (!pool.length) {
