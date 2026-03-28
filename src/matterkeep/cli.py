@@ -110,7 +110,9 @@ def export(
     if skip_render:
         cfg.export.skip_render = True
     if server:
-        cfg.server.url = server
+        cfg.server.url = server.rstrip("/")
+    if not cfg.server.url:
+        cfg.server.url = click.prompt("Mattermost server URL").rstrip("/")
     if insecure:
         cfg.server.insecure = True
 

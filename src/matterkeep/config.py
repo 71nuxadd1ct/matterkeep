@@ -58,10 +58,6 @@ def load(config_path: Path | None = None) -> Config:
     render_raw = raw.get("render", {})
 
     url = os.environ.get("MM_URL") or server_raw.get("url") or ""
-    if not url:
-        raise ConfigError(
-            "Server URL is required. Set MM_URL or server.url in config.yaml."
-        )
 
     insecure_env = os.environ.get("MM_INSECURE", "").lower() in ("1", "true", "yes")
     server = ServerConfig(
