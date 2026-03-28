@@ -189,6 +189,7 @@ class Exporter:
         if self._config.export.media_only and not (self._output / "data").exists():
             logger.info("--media-only on fresh run: posts fetched but not saved to data/")
 
+        self._save_self_user()
         teams = self._fetch_teams()
         channels = self._fetch_channels(teams)
 
@@ -218,6 +219,13 @@ class Exporter:
             self._write_manifest()
         _save_sync_state(self._output, state)
         logger.info("Export complete. Sync state saved.")
+
+    def _save_self_user(self) -> None:
+        try:
+            raw = self._client.get("users/me")
+            _write_atomic(self._output / "me.json", {"id": raw["id"], "username": raw.get("username", "")})
+        except Exception:
+            pass
 
     def _fetch_teams(self) -> list[Team]:
         raw_teams = list(self._client.paginate("users/me/teams"))

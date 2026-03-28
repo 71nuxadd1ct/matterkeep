@@ -108,11 +108,35 @@ class Renderer:
         if assets_src.exists():
             shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
+    def _self_id(self, channels_data: list[dict[str, Any]]) -> str:
+        """Infer the current user's ID — the one that appears in every DM channel name."""
+        me_file = self._output / "me.json"
+        if me_file.exists():
+            with me_file.open() as f:
+                return json.load(f).get("id", "")
+        from collections import Counter
+        counts: Counter[str] = Counter()
+        for cd in channels_data:
+            ch = cd["channel"]
+            if ch.get("type") == "D":
+                for part in ch.get("name", "").split("__"):
+                    if part:
+                        counts[part] += 1
+        top = counts.most_common(1)
+        return top[0][0] if top else ""
+
     def _enrich_channels(self, channels_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        self_id = self._self_id(channels_data)
+        users = self._load_users()
         result = []
         for cd in channels_data:
             ch = dict(cd["channel"])
             ch["has_real_posts"] = any(not p.get("type") for p in cd.get("posts", []))
+            if ch.get("type") == "D" and not ch.get("display_name"):
+                parts = ch.get("name", "").split("__")
+                other_id = next((p for p in parts if p and p != self_id), parts[0] if parts else "")
+                other = users.get(other_id, {})
+                ch["display_name"] = other.get("display_name") or other.get("username") or other_id
             result.append(ch)
         return result
 
