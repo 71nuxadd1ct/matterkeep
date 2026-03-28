@@ -210,3 +210,6 @@ def search(query: str, output_dir: Path, channel: str | None, limit: int) -> Non
     except MatterkeeperError as e:
         console.print(f"[red]Search failed:[/red] {e}")
         sys.exit(1)
+
+if __name__ == '__main__':
+    main()
