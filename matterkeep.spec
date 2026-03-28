@@ -37,9 +37,6 @@ a = Analysis(
         # keep the binary small — these are never used at runtime
         "tkinter",
         "unittest",
-        "xmlrpc",
-        "email",
-        "http.server",
         "pydoc",
     ],
     noarchive=False,
