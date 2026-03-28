@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% set assets_prefix = "../assets/" %}
+{% set assets_prefix = "assets/" %}
 
 {% block title %}#{{ channel.display_name }} — matterkeep{% endblock %}
 
@@ -7,7 +7,31 @@
 <div class="layout">
   <nav class="sidebar">
     <div class="sidebar-header">
-      <a class="logo" href="../index.html">matterkeep</a>
+      <a class="logo" href="index.html">matterkeep</a>
+    </div>
+
+    <div class="sidebar-toggle">
+      <label><input type="checkbox" id="show-empty"> Show empty channels</label>
+    </div>
+
+    <div id="channel-list">
+      {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
+      {% for type_key, label in types %}
+        {% set group = channels | selectattr("type", "equalto", type_key) | list %}
+        {% if group %}
+        <div class="channel-group">
+          <div class="channel-group-label">{{ label }}</div>
+          {% for ch in group | sort(attribute="display_name") %}
+          <a class="channel-link {% if ch.id == channel.id %}channel-active{% endif %}{% if ch.membership == 'left' %} channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
+             href="{{ ch.id }}.html"
+             title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
+            {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
+            {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
     </div>
   </nav>
 
@@ -103,5 +127,11 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="../assets/channel.js"></script>
+<script src="assets/channel.js"></script>
+<script>
+document.getElementById('show-empty').addEventListener('change', function () {
+  document.getElementById('channel-list').classList.toggle('show-empty', this.checked);
+});
+document.querySelector('.channel-active')?.scrollIntoView({ block: 'nearest' });
+</script>
 {% endblock %}

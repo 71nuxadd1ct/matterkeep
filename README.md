@@ -13,7 +13,8 @@ matterkeep exports everything a regular Mattermost user can see: channels, priva
 - `--media-manifest` writes `media/manifest.csv` — every downloaded file with sender, timestamp, and channel.
 - Optional `age` encryption of the archive.
 - Client-side full-text search via Lunr.js. Dark theme by default.
-- Per-channel filter bar — filter messages by keyword, sender, and date range.
+- Per-channel filter bar — filter messages by keyword, sender, and date range; system messages hidden while a filter is active.
+- Persistent sidebar on all pages — jump between channels without returning to the index; empty channels hidden by default with a toggle to reveal them.
 - Image attachments render as thumbnails inline; click to open full size.
 - Media organised into human-readable folders by channel name.
 
@@ -93,6 +94,20 @@ matterkeep encrypt --output-dir ./archive  # passphrase mode
 
 # Search exported JSON from the terminal
 matterkeep search "keyword" --output-dir ./archive
+```
+
+### Getting files after a messages-only export
+
+If you exported messages without files (e.g. `--skip-files`) and want to download them now, run a normal export without that flag. The exporter scans existing JSON for posts whose attachments weren't downloaded and fetches them — already-downloaded files are skipped.
+
+```bash
+matterkeep export --output-dir ./archive
+```
+
+If you need to re-fetch everything from scratch, use `--full`:
+
+```bash
+matterkeep export --full --output-dir ./archive
 ```
 
 ### Media manifest

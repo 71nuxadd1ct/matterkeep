@@ -117,6 +117,15 @@ body {
 .search-result-item:hover { background: var(--bg-message-hover); }
 .search-result-channel { color: var(--text-muted); font-size: 11px; }
 
+.sidebar-toggle {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sidebar-toggle label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
 #channel-list {
   overflow-y: auto;
   flex: 1;
@@ -148,7 +157,10 @@ body {
 }
 
 .channel-link:hover { background: var(--bg-message-hover); }
+.channel-link.channel-active { background: var(--accent); color: #fff; font-weight: 600; }
 .channel-link.channel-left { opacity: 0.5; font-style: italic; }
+.channel-link.channel-empty { display: none; }
+#channel-list.show-empty .channel-link.channel-empty { display: block; opacity: 0.4; }
 
 .badge-left {
   font-size: 10px;
