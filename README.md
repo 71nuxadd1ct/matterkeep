@@ -46,7 +46,7 @@ cp .env.example .env
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `MM_URL` | yes | Mattermost server URL |
+| `MM_URL` | no | Mattermost server URL (prompted if not set; or use `--server`) |
 | `MM_USERNAME` | no | Username or email (prompted if not set) |
 | `MM_TOKEN` | no | Personal Access Token (skips password prompt) |
 | `MM_INSECURE` | no | Set `true` to disable TLS verification |
@@ -57,8 +57,11 @@ You can also use `config.yaml` (see `config.example.yaml`).
 ### Export
 
 ```bash
-# Full export — prompts for password (and MFA code if required)
+# Full export — prompts for server URL, password, and MFA code if required
 matterkeep export --output-dir ./archive
+
+# Specify server on the command line
+matterkeep export --server https://mattermost.example.com --output-dir ./archive
 
 # Limit to specific channels
 matterkeep export --channels general,random --output-dir ./archive
@@ -81,6 +84,15 @@ matterkeep export --full --output-dir ./archive
 ```
 
 Open `archive/html/index.html` in a browser to browse the archive.
+
+### Re-render HTML without re-exporting
+
+```bash
+# Rebuild HTML from existing exported data — no server connection needed
+matterkeep render --output-dir ./archive
+```
+
+Useful after upgrading matterkeep to pick up template or search index changes.
 
 ### Other commands
 
@@ -127,18 +139,30 @@ If your server uses a self-signed or internal CA certificate, set `MM_INSECURE=t
 
 ## Releases
 
-Pushing a version tag triggers a GitHub Actions workflow that builds a Windows executable (`matterkeep.exe`) on a Windows runner using PyInstaller and attaches it to the release. No Python required on the end user's machine.
+Pushing a version tag triggers a GitHub Actions workflow that builds platform binaries via PyInstaller and attaches them to the release. No Python required on the end user's machine.
+
+| Artifact | Platform |
+|----------|----------|
+| `matterkeep.exe` | Windows |
+| `matterkeep-macos-arm64` | macOS (Apple Silicon) |
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-The `.exe` appears under **Releases** on GitHub once the workflow completes. Users download it and run it directly:
+Binaries appear under **Releases** on GitHub once the workflow completes:
 
-```
+```bash
+# Windows
 matterkeep.exe export --output-dir .\archive
+
+# macOS — make executable first
+chmod +x matterkeep-macos-arm64
+./matterkeep-macos-arm64 export --output-dir ./archive
 ```
+
+Intel Mac users should install via pip.
 
 ## Development
 
