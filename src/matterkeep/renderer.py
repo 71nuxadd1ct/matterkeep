@@ -94,7 +94,19 @@ class Renderer:
 
         self._render_index(channels_data, channels, teams)
         self._render_media_page(channels_data, users, channels, teams)
+        self._write_root_redirect()
         logger.info("HTML archive written to %s", self._html_dir)
+
+    def _write_root_redirect(self) -> None:
+        """Write a redirect index.html at the archive root for easy access."""
+        redirect = (
+            '<!DOCTYPE html>\n'
+            '<html lang="en"><head><meta charset="utf-8">\n'
+            '<meta http-equiv="refresh" content="0; url=html/index.html">\n'
+            '<title>matterkeep archive</title></head>\n'
+            '<body><p><a href="html/index.html">Open archive</a></p></body></html>\n'
+        )
+        (self._output / "index.html").write_text(redirect, encoding="utf-8")
 
     def _load_teams(self) -> list[dict[str, Any]]:
         f = self._output / "teams.json"

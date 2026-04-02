@@ -9,21 +9,28 @@ matterkeep exports everything a regular Mattermost user can see: channels, priva
 **Key behaviours:**
 - Authenticates with username + password (MFA/TOTP supported). PAT via `MM_TOKEN` env var as an alternative.
 - Incremental sync — re-runs only fetch posts newer than the last export.
+- Exports all teams the user belongs to; channels are grouped by team in the sidebar.
+- `--teams` / `--exclude-teams` limit the export to specific teams.
+- `--channels` / `--exclude-channels` limit which channels are exported within each team.
+- `--skip-files` exports message history without downloading attachments.
 - `--media-only` downloads attachments without saving message history.
 - `--media-manifest` writes `media/manifest.csv` — every downloaded file with sender, timestamp, and channel.
-- Optional `age` encryption of the archive.
 - Client-side full-text search via Lunr.js. Dark theme by default.
 - Per-channel filter bar — filter messages by keyword, sender, and date range; system messages hidden while a filter is active.
-- Persistent sidebar on all pages — jump between channels without returning to the index; empty channels hidden by default with a toggle to reveal them.
+- Persistent sidebar on all pages — channels grouped by team with collapsible sections; Direct Messages below all teams; empty channels hidden by default with a toggle to reveal them.
 - Image attachments render as thumbnails inline; click to open full size.
 - Media organised into human-readable folders by channel name.
+- `index.html` written at the archive root for one-click access.
 
 **Architecture:** CLI (click) → Exporter → API Client (mattermostdriver) → Archive Writer (JSON + Jinja2 HTML).
 
 ## Requirements
 
 - Python 3.11+
-- `age` CLI (optional, for archive encryption — [filippo.io/age](https://filippo.io/age))
+
+## Security note
+
+The archive contains your message history and any downloaded files. If the content is sensitive, store the archive directory in an encrypted location — for example, an encrypted disk image, a VeraCrypt volume, or a folder protected by your OS's built-in encryption. matterkeep does not encrypt archive content.
 
 ## Usage
 
@@ -63,13 +70,19 @@ matterkeep export --output-dir ./archive
 # Specify server on the command line
 matterkeep export --server https://mattermost.example.com --output-dir ./archive
 
-# Limit to specific channels
+# Limit to specific teams
+matterkeep export --teams "Engineering,Design" --output-dir ./archive
+
+# Exclude specific teams
+matterkeep export --exclude-teams "Archive" --output-dir ./archive
+
+# Limit to specific channels (across all exported teams)
 matterkeep export --channels general,random --output-dir ./archive
 
 # Exclude specific channels
 matterkeep export --exclude-channels recruiting,random --output-dir ./archive
 
-# JSON only, no file downloads, no HTML rendering
+# Message history only — no file downloads, no HTML rendering
 matterkeep export --skip-files --skip-render --output-dir ./archive
 
 # Download media only (no message history written)
@@ -78,12 +91,11 @@ matterkeep export --media-only --output-dir ./archive
 # Download media and write a CSV log of who sent what, when
 matterkeep export --media-only --media-manifest --output-dir ./archive
 
-# Force full re-export (ignore sync state) — use this to fetch messages
-# after a prior --media-only run; already-downloaded files are skipped
+# Force full re-export (ignore sync state)
 matterkeep export --full --output-dir ./archive
 ```
 
-Open `archive/html/index.html` in a browser to browse the archive.
+Open `archive/index.html` in a browser to browse the archive.
 
 ### Re-render HTML without re-exporting
 
@@ -99,10 +111,6 @@ Useful after upgrading matterkeep to pick up template or search index changes.
 ```bash
 # Show sync state (channels, last export time)
 matterkeep status --output-dir ./archive
-
-# Encrypt archive with age
-matterkeep encrypt --output-dir ./archive --recipient <age-public-key>
-matterkeep encrypt --output-dir ./archive  # passphrase mode
 
 # Search exported JSON from the terminal
 matterkeep search "keyword" --output-dir ./archive
