@@ -191,6 +191,7 @@ class Exporter:
 
         self._save_self_user()
         teams = self._fetch_teams()
+        self._save_teams(teams)
         channels = self._fetch_channels(teams)
 
         with Progress(
@@ -230,6 +231,12 @@ class Exporter:
     def _fetch_teams(self) -> list[Team]:
         raw_teams = list(self._client.paginate("users/me/teams"))
         return [_parse_team(t) for t in raw_teams]
+
+    def _save_teams(self, teams: list[Team]) -> None:
+        _write_atomic(
+            self._output / "teams.json",
+            [{"id": t.id, "name": t.name, "display_name": t.display_name} for t in teams],
+        )
 
     def _fetch_channels(self, teams: list[Team]) -> list[Channel]:
         cfg = self._config.export

@@ -29,23 +29,64 @@
     </div>
 
     <div id="channel-list">
-      {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
-      {% for type_key, label in types %}
-        {% set group = channels | selectattr("type", "equalto", type_key) | list %}
-        {% if group %}
+      {% if teams %}
+        {% for team in teams | sort(attribute="display_name") %}
+          {% set team_chs = channels | selectattr("team_id", "equalto", team.id) | list %}
+          {% if team_chs %}
+          <details class="team-section" open>
+            <summary class="team-section-header">{{ team.display_name }}</summary>
+            {% for type_key, label in [("O", "Channels"), ("P", "Private")] %}
+              {% set group = team_chs | selectattr("type", "equalto", type_key) | list %}
+              {% if group %}
+              <div class="channel-group">
+                <div class="channel-group-label">{{ label }}</div>
+                {% for ch in group | sort(attribute="display_name") %}
+                <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
+                   href="{{ ch.id }}.html"
+                   title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
+                  #{{ ch.display_name }}
+                  {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+                </a>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% endfor %}
+          </details>
+          {% endif %}
+        {% endfor %}
+        {% set dm_chs = (channels | selectattr("type", "equalto", "D") | list) + (channels | selectattr("type", "equalto", "G") | list) %}
+        {% if dm_chs %}
         <div class="channel-group">
-          <div class="channel-group-label">{{ label }}</div>
-          {% for ch in group | sort(attribute="display_name") %}
+          <div class="channel-group-label">Direct Messages</div>
+          {% for ch in dm_chs | sort(attribute="display_name") %}
           <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
              href="{{ ch.id }}.html"
              title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
-            {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
+            {% if ch.type == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
             {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
           </a>
           {% endfor %}
         </div>
         {% endif %}
-      {% endfor %}
+      {% else %}
+        {% set types = [("O", "Channels"), ("P", "Private"), ("G", "Group Messages"), ("D", "Direct Messages")] %}
+        {% for type_key, label in types %}
+          {% set group = channels | selectattr("type", "equalto", type_key) | list %}
+          {% if group %}
+          <div class="channel-group">
+            <div class="channel-group-label">{{ label }}</div>
+            {% for ch in group | sort(attribute="display_name") %}
+            <a class="channel-link {% if ch.membership == 'left' %}channel-left{% endif %}{% if not ch.has_real_posts %} channel-empty{% endif %}"
+               href="{{ ch.id }}.html"
+               title="{{ ch.display_name }}{% if ch.membership == 'left' %} (left){% endif %}">
+              {% if type_key == "D" %}@{% else %}#{% endif %}{{ ch.display_name }}
+              {% if ch.membership == "left" %}<span class="badge-left">left</span>{% endif %}
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
     </div>
   </nav>
 

@@ -77,6 +77,7 @@ class Renderer:
         self._html_dir.mkdir(parents=True, exist_ok=True)
 
         users = self._load_users()
+        teams = self._load_teams()
         channels_data = self._load_channels(data_dir)
 
         if not channels_data:
@@ -89,11 +90,18 @@ class Renderer:
         self._copy_assets()
         self._write_lunr_docs(lunr_docs)
         for ch_data in channels_data:
-            self._render_channel(ch_data, users, channels)
+            self._render_channel(ch_data, users, channels, teams)
 
-        self._render_index(channels_data, channels)
-        self._render_media_page(channels_data, users, channels)
+        self._render_index(channels_data, channels, teams)
+        self._render_media_page(channels_data, users, channels, teams)
         logger.info("HTML archive written to %s", self._html_dir)
+
+    def _load_teams(self) -> list[dict[str, Any]]:
+        f = self._output / "teams.json"
+        if not f.exists():
+            return []
+        with f.open() as fh:
+            return json.load(fh)  # type: ignore[no-any-return]
 
     def _load_users(self) -> dict[str, Any]:
         f = self._output / "users.json"
@@ -151,7 +159,7 @@ class Renderer:
             result.append(ch)
         return result
 
-    def _render_channel(self, ch_data: dict[str, Any], users: dict[str, Any], channels: list[dict[str, Any]]) -> None:
+    def _render_channel(self, ch_data: dict[str, Any], users: dict[str, Any], channels: list[dict[str, Any]], teams: list[dict[str, Any]]) -> None:
         ch = ch_data["channel"]
         posts = ch_data.get("posts", [])
 
@@ -187,6 +195,7 @@ class Renderer:
             channel=ch,
             posts=rendered_posts,
             channels=channels,
+            teams=teams,
             theme=self._config.render.theme,
             inline_images=self._config.render.inline_images,
         )
@@ -198,6 +207,7 @@ class Renderer:
         channels_data: list[dict[str, Any]],
         users: dict[str, Any],
         channels: list[dict[str, Any]],
+        teams: list[dict[str, Any]],
     ) -> None:
         items = []
         for cd in channels_data:
@@ -236,6 +246,7 @@ class Renderer:
         html = tmpl.render(
             items=items,
             channels=channels,
+            teams=teams,
             theme=self._config.render.theme,
         )
         (self._html_dir / "media.html").write_text(html, encoding="utf-8")
@@ -244,10 +255,12 @@ class Renderer:
         self,
         channels_data: list[dict[str, Any]],
         channels: list[dict[str, Any]],
+        teams: list[dict[str, Any]],
     ) -> None:
         tmpl = self._env.get_template("index.html")
         html = tmpl.render(
             channels=channels,
+            teams=teams,
             theme=self._config.render.theme,
         )
         (self._html_dir / "index.html").write_text(html, encoding="utf-8")
