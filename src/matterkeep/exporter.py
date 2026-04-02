@@ -254,12 +254,25 @@ class Exporter:
         cfg = self._config.export
         channels: dict[str, Channel] = {}
 
+        # Fetch DMs and group messages — these are not team-scoped
+        try:
+            for c in self._client.get("users/me/channels") or []:
+                if c.get("type") in ("D", "G"):
+                    ch = _parse_channel(c)
+                    channels[ch.id] = ch
+        except APIError as e:
+            logger.warning("Could not fetch direct messages: %s", e)
+
+        # Fetch team-scoped channels using the correct per-team endpoint
         for team in teams:
-            raw = self._client.get("users/me/channels", params={"team_id": team.id})
-            for c in raw:
-                ch = _parse_channel(c)
-                ch.team_id = team.id
-                channels[ch.id] = ch
+            try:
+                raw = self._client.get(f"users/me/teams/{team.id}/channels")
+                for c in raw or []:
+                    ch = _parse_channel(c)
+                    ch.team_id = team.id
+                    channels[ch.id] = ch
+            except APIError as e:
+                logger.warning("Could not fetch channels for team %s: %s", team.id, e)
 
         if self._config.export.include_left:
             for team in teams:
