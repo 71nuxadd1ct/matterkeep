@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-02
+
+### Added
+- `--teams` and `--exclude-teams` CLI options (and matching `export.teams` /
+  `export.exclude_teams` config keys) to restrict the export to specific
+  Mattermost teams, mirroring the existing `--channels` / `--exclude-channels`
+  behaviour.
+
+### Fixed
+- Sidebar team sections now visually nest their channels beneath the team
+  header via increased left-padding, making the hierarchy unambiguous.
+  Each team collapses independently; Direct Messages remain pinned below
+  all team sections.
+
 ## [0.8.0] - 2026-04-02
 
 ### Added
@@ -17,3 +31,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   layout.
 
 [0.8.0]: https://gitlab.andelain.test/apps/matterkeep/compare/v0.7.0...v0.8.0
+
+[0.9.0]: https://gitlab.andelain.test/apps/matterkeep/compare/v0.8.0...v0.9.0
