@@ -153,6 +153,7 @@ Pushing a version tag triggers a GitHub Actions workflow that builds platform bi
 |----------|----------|
 | `matterkeep.exe` | Windows |
 | `matterkeep-macos-arm64` | macOS (Apple Silicon) |
+| `matterkeep-linux-x86_64` | Linux (x86_64) |
 
 ```bash
 git tag v1.0.0
@@ -170,7 +171,7 @@ chmod +x matterkeep-macos-arm64
 ./matterkeep-macos-arm64 export --output-dir ./archive
 ```
 
-Intel Mac users should install via pip.
+Intel Mac users should install via pip. The Linux binary runs on any modern x86_64 distribution; no Python required.
 
 ## Development
 
