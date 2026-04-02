@@ -173,7 +173,8 @@ body {
 
 /* Team sections */
 .team-section {
-  margin-bottom: 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
 }
 
 .team-section-header {
@@ -188,8 +189,6 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   user-select: none;
-  border-top: 1px solid var(--border);
-  margin-top: 4px;
 }
 
 .team-section-header::-webkit-details-marker { display: none; }
@@ -204,6 +203,15 @@ body {
 
 details.team-section:not([open]) > .team-section-header::before {
   transform: rotate(-90deg);
+}
+
+/* Indent channels and sub-labels that live inside a team section */
+.team-section .channel-group-label {
+  padding-left: 22px;
+}
+
+.team-section .channel-link {
+  padding-left: 22px;
 }
 
 .badge-left {

@@ -191,6 +191,7 @@ class Exporter:
 
         self._save_self_user()
         teams = self._fetch_teams()
+        teams = self._filter_teams(teams)
         self._save_teams(teams)
         channels = self._fetch_channels(teams)
 
@@ -231,6 +232,17 @@ class Exporter:
     def _fetch_teams(self) -> list[Team]:
         raw_teams = list(self._client.paginate("users/me/teams"))
         return [_parse_team(t) for t in raw_teams]
+
+    def _filter_teams(self, teams: list[Team]) -> list[Team]:
+        cfg = self._config.export
+        result = teams
+        if cfg.teams:
+            names = set(cfg.teams)
+            result = [t for t in result if t.name in names or t.display_name in names]
+        if cfg.exclude_teams:
+            names = set(cfg.exclude_teams)
+            result = [t for t in result if t.name not in names and t.display_name not in names]
+        return result
 
     def _save_teams(self, teams: list[Team]) -> None:
         _write_atomic(

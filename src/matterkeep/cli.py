@@ -44,6 +44,10 @@ def main() -> None:
               help="Archive output directory.")
 @click.option("--full", is_flag=True, default=False,
               help="Force full re-export, ignoring sync state.")
+@click.option("--teams", default=None,
+              help="Comma-separated team names to include.")
+@click.option("--exclude-teams", default=None,
+              help="Comma-separated team names to exclude.")
 @click.option("--channels", default=None,
               help="Comma-separated channel names to include.")
 @click.option("--exclude-channels", default=None,
@@ -68,6 +72,8 @@ def export(
     config_path: Path | None,
     output_dir: Path | None,
     full: bool,
+    teams: str | None,
+    exclude_teams: str | None,
     channels: str | None,
     exclude_channels: str | None,
     include_left: bool,
@@ -95,6 +101,10 @@ def export(
     # CLI flags override config
     if output_dir:
         cfg.export.output_dir = output_dir
+    if teams:
+        cfg.export.teams = [t.strip() for t in teams.split(",")]
+    if exclude_teams:
+        cfg.export.exclude_teams = [t.strip() for t in exclude_teams.split(",")]
     if channels:
         cfg.export.channels = [c.strip() for c in channels.split(",")]
     if exclude_channels:

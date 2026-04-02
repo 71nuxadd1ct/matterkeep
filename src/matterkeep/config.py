@@ -18,6 +18,8 @@ class ServerConfig:
 @dataclass
 class ExportConfig:
     output_dir: Path = field(default_factory=lambda: Path("./archive"))
+    teams: list[str] = field(default_factory=list)
+    exclude_teams: list[str] = field(default_factory=list)
     channels: list[str] = field(default_factory=list)
     exclude_channels: list[str] = field(default_factory=list)
     skip_files: bool = False
@@ -68,6 +70,8 @@ def load(config_path: Path | None = None) -> Config:
     output_dir_raw = os.environ.get("MM_OUTPUT") or export_raw.get("output_dir", "./archive")
     export = ExportConfig(
         output_dir=Path(output_dir_raw),
+        teams=export_raw.get("teams") or [],
+        exclude_teams=export_raw.get("exclude_teams") or [],
         channels=export_raw.get("channels") or [],
         exclude_channels=export_raw.get("exclude_channels") or [],
         skip_files=bool(export_raw.get("skip_files", False)),
