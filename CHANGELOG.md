@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-02
+
+### Added
+- Linux x86_64 binary added to the release workflow; `matterkeep-linux-x86_64`
+  is now built and attached to every GitHub release alongside the Windows and
+  macOS artifacts.
+
 ## [1.0.0] - 2026-04-02
 
 ### Added
@@ -55,3 +62,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.0]: https://gitlab.andelain.test/apps/matterkeep/compare/v0.8.0...v0.9.0
 
 [1.0.0]: https://gitlab.andelain.test/apps/matterkeep/compare/v0.9.0...v1.0.0
+
+[1.1.0]: https://gitlab.andelain.test/apps/matterkeep/compare/v1.0.0...v1.1.0
