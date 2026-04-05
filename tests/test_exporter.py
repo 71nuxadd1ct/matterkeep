@@ -50,6 +50,9 @@ def make_client(server_url: str = "https://mm.example.com", token: str = "tok") 
     return client
 
 
+SELF_USER = {"id": "me1", "username": "testuser"}
+
+
 # ── filename sanitization ─────────────────────────────────────────────────────
 
 def test_sanitize_filename_strips_path_separators():
@@ -80,10 +83,10 @@ def test_export_creates_output_dir(tmp_path):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "team1", "display_name": "Team 1"}])
     client.get.side_effect = [
-        # users/me/channels
+        SELF_USER,
+        [],  # users/me/channels (DMs)
         [{"id": "ch1", "team_id": "t1", "name": "general", "display_name": "General",
           "type": "O", "header": "", "purpose": ""}],
-        # channels/ch1/posts
         make_posts_response([make_post("p1")]),
         {"id": "u1", "username": "alice", "nickname": "", "first_name": "Alice", "last_name": ""},
     ]
@@ -104,6 +107,8 @@ def test_export_writes_correct_post_data(tmp_path):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "team1", "display_name": "Team 1"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "general", "display_name": "General",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([make_post("p1", message="Hello world", create_at=5000)]),
@@ -133,6 +138,8 @@ def test_incremental_sync_uses_since(tmp_path):
     client = make_client()
     client.paginate.return_value = iter([{"id": "t1", "name": "team1", "display_name": "Team 1"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "general", "display_name": "General",
           "type": "O", "header": "", "purpose": ""}],
         {"order": [], "posts": {}},
@@ -156,6 +163,8 @@ def test_edited_post_merged_not_duplicated(tmp_path):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([post_v1]),
@@ -166,6 +175,8 @@ def test_edited_post_merged_not_duplicated(tmp_path):
     # Second run — edited post returned
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([post_v2]),
@@ -187,6 +198,8 @@ def test_media_only_skips_writing_data(tmp_path):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([make_post("p1")]),
@@ -210,6 +223,8 @@ def test_api_error_on_posts_logs_warning_continues(tmp_path, caplog):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         APIError("forbidden", status_code=403),
@@ -234,6 +249,8 @@ def test_file_download_403_skipped(tmp_path, caplog):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([post_with_file]),
@@ -254,6 +271,8 @@ def test_sync_state_written_atomically(tmp_path):
 
     client.paginate.return_value = iter([{"id": "t1", "name": "t1", "display_name": "T"}])
     client.get.side_effect = [
+        SELF_USER,
+        [],
         [{"id": "ch1", "team_id": "t1", "name": "ch", "display_name": "Ch",
           "type": "O", "header": "", "purpose": ""}],
         make_posts_response([make_post("p1", create_at=7777)]),

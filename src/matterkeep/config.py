@@ -82,6 +82,9 @@ def load(config_path: Path | None = None) -> Config:
         per_page=int(export_raw.get("per_page", 200)),
     )
 
+    if not server.url:
+        raise ConfigError("Server URL is required. Set MM_URL or server.url in config.")
+
     if export.per_page < 1 or export.per_page > 200:
         raise ConfigError("export.per_page must be between 1 and 200.")
 

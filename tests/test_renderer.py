@@ -66,7 +66,7 @@ def test_build_lunr_index_excludes_system_posts():
             ],
         }
     ]
-    docs = _build_lunr_index(channels_data)
+    docs = _build_lunr_index(channels_data, {}, {})
     ids = [d["id"] for d in docs]
     assert "p1" in ids
     assert "p2" not in ids
@@ -79,7 +79,7 @@ def test_build_lunr_index_includes_channel_name():
             "posts": [{"id": "p1", "type": "", "message": "test"}],
         }
     ]
-    docs = _build_lunr_index(channels_data)
+    docs = _build_lunr_index(channels_data, {}, {})
     assert docs[0]["channel_name"] == "General"
 
 
