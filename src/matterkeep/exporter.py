@@ -312,7 +312,7 @@ class Exporter:
         data_dir = self._output / "data"
         channel_file = data_dir / f"{channel.id}.json"
 
-        existing_posts: dict[str, dict] = {}
+        existing_posts: dict[str, dict[str, Any]] = {}
         if channel_file.exists():
             with channel_file.open() as f:
                 saved = json.load(f)

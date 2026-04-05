@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.text import Text
@@ -72,7 +73,7 @@ def cli_search(
         console.print()
 
 
-def _load_users(output_dir: Path) -> dict[str, dict]:
+def _load_users(output_dir: Path) -> dict[str, dict[str, Any]]:
     users_file = output_dir / "users.json"
     if not users_file.exists():
         return {}

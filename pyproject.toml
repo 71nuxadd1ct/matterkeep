@@ -29,6 +29,8 @@ dev = [
     "mypy>=1.10",
     "pip-audit>=2.7",
     "pyinstaller>=6.0",
+    "types-requests>=2.31",
+    "types-PyYAML>=6.0",
 ]
 
 [project.scripts]

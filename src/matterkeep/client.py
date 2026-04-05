@@ -1,7 +1,7 @@
 import logging
 import time
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, cast
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -136,7 +136,7 @@ class MMClient:
                 f"GET {path} returned {resp.status_code}",
                 status_code=resp.status_code,
             )
-        return resp.iter_content(chunk_size=65536)
+        return cast(Iterator[bytes], resp.iter_content(chunk_size=65536))
 
     def paginate(self, path: str, per_page: int = 200, **kwargs: Any) -> Iterator[Any]:
         page = 0

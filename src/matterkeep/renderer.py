@@ -144,7 +144,7 @@ class Renderer:
         me_file = self._output / "me.json"
         if me_file.exists():
             with me_file.open() as f:
-                return json.load(f).get("id", "")
+                return str(json.load(f).get("id", ""))
         from collections import Counter
         counts: Counter[str] = Counter()
         for cd in channels_data:
@@ -175,8 +175,8 @@ class Renderer:
         ch = ch_data["channel"]
         posts = ch_data.get("posts", [])
 
-        threads: dict[str, list[dict]] = {}
-        roots: list[dict] = []
+        threads: dict[str, list[dict[str, Any]]] = {}
+        roots: list[dict[str, Any]] = []
         for post in posts:
             root_id = post.get("root_id")
             if root_id:
