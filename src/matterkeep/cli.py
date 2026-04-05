@@ -174,6 +174,7 @@ def export(
               show_default=True, help="Archive directory to inspect.")
 def status(output_dir: Path) -> None:
     """Show sync state for an archive."""
+    console = Console()
     state_file = output_dir / "sync_state.json"
     if not state_file.exists():
         console.print("[yellow]No sync state found.[/yellow] Have you run an export yet?")
@@ -189,7 +190,6 @@ def status(output_dir: Path) -> None:
     for channel_id, ts in raw.get("channels", {}).items():
         table.add_row(channel_id, str(ts))
 
-    console = Console()
     console.print(table)
     console.print(f"Last run: {raw.get('last_run', 'unknown')}")
 

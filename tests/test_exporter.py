@@ -1,14 +1,11 @@
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from matterkeep.client import MMClient
 from matterkeep.config import Config, ExportConfig, RenderConfig, ServerConfig
 from matterkeep.exceptions import APIError
 from matterkeep.exporter import Exporter, _sanitize_filename
-
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-from matterkeep.models import Channel, FileAttachment, Post, Reaction, SyncState, Team, User
+from matterkeep.models import Channel, Post, SyncState
 
 
 def test_post_defaults():

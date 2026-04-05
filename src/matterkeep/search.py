@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from rich.console import Console
@@ -48,7 +48,7 @@ def cli_search(
     console.print(f"[bold]{len(results)}[/bold] result(s) for [bold]{query}[/bold]\n")
 
     for channel, post in results:
-        ts = datetime.fromtimestamp(post["create_at"] / 1000, tz=timezone.utc)
+        ts = datetime.fromtimestamp(post["create_at"] / 1000, tz=UTC)
         user = users.get(post.get("user_id", ""), {})
         username = user.get("display_name") or user.get("username") or post.get("user_id", "?")
         channel_name = channel.get("display_name") or channel.get("name", "?")

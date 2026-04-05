@@ -2,7 +2,7 @@ import json
 import logging
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,7 @@ _md = mistune.create_markdown(escape=True)
 
 
 def _ts_to_str(ts_ms: int) -> str:
-    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+    dt = datetime.fromtimestamp(ts_ms / 1000, tz=UTC)
     return dt.strftime("%Y-%m-%d %H:%M")
 
 

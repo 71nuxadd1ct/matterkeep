@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -162,7 +162,7 @@ def _load_sync_state(output_dir: Path) -> SyncState:
 
 
 def _save_sync_state(output_dir: Path, state: SyncState) -> None:
-    state.last_run = datetime.now(timezone.utc).isoformat()
+    state.last_run = datetime.now(UTC).isoformat()
     _write_atomic(
         output_dir / "sync_state.json",
         {
@@ -518,7 +518,7 @@ class Exporter:
     def _record_manifest(self, post: Post, channel: Channel, attachment: FileAttachment) -> None:
         user = self._users.get(post.user_id)
         sender = user.display_name.strip() or user.username if user else post.user_id
-        ts = datetime.fromtimestamp(post.create_at / 1000, tz=timezone.utc)
+        ts = datetime.fromtimestamp(post.create_at / 1000, tz=UTC)
         size_kb = f"{attachment.size / 1024:.1f} KB" if attachment.size else ""
         self._manifest.append({
             "timestamp": ts.strftime("%Y-%m-%d %H:%M UTC"),

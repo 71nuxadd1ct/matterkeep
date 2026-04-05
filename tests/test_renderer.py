@@ -7,7 +7,6 @@ from matterkeep.config import Config, ExportConfig, RenderConfig, ServerConfig
 from matterkeep.exceptions import MatterkeeperError
 from matterkeep.renderer import Renderer, _build_lunr_index, _ts_to_str
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def make_config(output_dir: Path, theme: str = "dark") -> Config:
